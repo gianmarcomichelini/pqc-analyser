@@ -1,0 +1,37 @@
+# Private keys and sensitive data
+*.key
+*.pem
+*.p12
+*.pfx
+*.sig
+*.secret
+
+# Build artifacts
+build/
+*.o
+*.so
+*.a
+*.dylib
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+output/*

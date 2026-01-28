@@ -1,0 +1,9 @@
+services:
+  pqc-analyser:
+    build: .
+    container_name: pqc-analyser
+    volumes:
+      - ./output:/app/output  
+    environment:
+      - OQS_OID_EVP=1        
+    command: tail -f /dev/null 

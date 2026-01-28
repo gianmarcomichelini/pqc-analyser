@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# ==========================================
+# PQC Toolkit CLI (Entry Point)
+# ==========================================
+
+# 1. Path Setup
+#    Resolves the directory of this script to find the project root reliably
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$BIN_DIR")"
+SRC_DIR="$PROJECT_ROOT/src"
+
+# Export project root for other scripts to use if needed
+export PROJECT_ROOT
+
+# 2. Help Function
+show_help() {
+    echo "Usage: $0 <module> <command> [arguments]"
+    echo ""
+    echo "Modules:"
+    echo "  sign      Digital Signatures (Falcon, ML-DSA, SPHINCS+, RSA, ECDSA)"
+    echo "  kem       Key Encapsulation / Agreement (ML-KEM, ECDH)"
+    echo ""
+    echo "Commands for 'sign':"
+    echo "  keygen [family]   Generate keys. Families: all, falcon, mldsa, sphincs, classical"
+    echo "  bench <type> <algo> <file> [curve]"
+    echo "                    Run signing benchmark (e.g., bench pq ml-dsa-44 msg.txt)"
+    echo "  analyze <type> <algo>"
+    echo "                    Analyze key/signature sizes"
+    echo "  manage            Interactive sign/verify manager"
+    echo ""
+    echo "Commands for 'kem':"
+    echo "  keygen            Generate ML-KEM keys (512, 768, 1024)"
+    echo "  sim               Interactive ML-KEM simulation"
+    echo "  ecdh              Interactive ECDH simulation"
+    echo "  bench <type> <algo>"
+    echo "                    Run KEM benchmark (e.g., bench pq ml-kem-768)"
+    echo ""
+    echo "Examples:"
+    echo "  $0 sign keygen mldsa"
+    echo "  $0 sign bench pq ml-dsa-65 message.txt"
+    echo "  $0 kem sim"
+}
+
+# 3. Argument Parsing & Routing
+MODULE=$1
+COMMAND=$2
+shift 2  # Remove first two arguments ($1 and $2) so $@ contains only the rest
+
+# Basic Validation
+if [ -z "$MODULE" ]; then
+    show_help
+    exit 1
+fi
+
+case "$MODULE" in
+    "sign")
+        # Route to Digital Signature Scripts
+        case "$COMMAND" in
+            "keygen")
+                # Default to 'all' if no specific family provided
+                bash "$SRC_DIR/key_generation/keygen.sh" "${1:-all}"
+                ;;
+            "bench")
+                # Check for required arguments for benchmark
+                if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+                    echo "Error: Missing arguments for 'sign bench'."
+                    echo "Usage: $0 sign bench <pq/classical> <algo> <file>"
+                    exit 1
+                fi
+                bash "$SRC_DIR/digital_signatures/benchmark.sh" "$@"
+                ;;
+            "analyze")
+                bash "$SRC_DIR/digital_signatures/analyze.sh" "$@"
+                ;;
+            "manage")
+                bash "$SRC_DIR/digital_signatures/manager.sh" "$@"
+                ;;
+            *)
+                echo "Error: Unknown command '$COMMAND' for module 'sign'"
+                show_help
+                exit 1
+                ;;
+        esac
+        ;;
+
+    "kem")
+        # Route to Key Agreement Scripts
+        case "$COMMAND" in
+            "keygen")
+                bash "$SRC_DIR/key_agreement/keygen.sh" "$@"
+                ;;
+            "sim")
+                bash "$SRC_DIR/key_agreement/kem.sh" "$@"
+                ;;
+            "ecdh")
+                bash "$SRC_DIR/key_agreement/ecdh.sh" "$@"
+                ;;
+            "bench")
+                if [ -z "$1" ] || [ -z "$2" ]; then
+                    echo "Error: Missing arguments for 'kem bench'."
+                    echo "Usage: $0 kem bench <pq/classical> <algo>"
+                    exit 1
+                fi
+                bash "$SRC_DIR/key_agreement/benchmark.sh" "$@"
+                ;;
+            *)
+                echo "Error: Unknown command '$COMMAND' for module 'kem'"
+                show_help
+                exit 1
+                ;;
+        esac
+        ;;
+
+    *)
+        echo "Error: Unknown module '$MODULE'"
+        show_help
+        exit 1
+        ;;
+esac
